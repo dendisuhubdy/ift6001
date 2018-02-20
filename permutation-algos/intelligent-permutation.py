@@ -1,3 +1,5 @@
+from beautifultable import BeautifulTable
+
 def product(p, q):
     return tuple(q[p[i] - 1] for i in range(len(p)))
 
@@ -11,7 +13,7 @@ def sift(tableau, p):
     IDENTITY = tuple(range(1, len(p)+1))
     q=p
     while q is not IDENTITY:
-        print(q)
+        #print(q)
         i = min(x for x in range(len(q)))
         j = q[i] - 1
         if tableau[i][j] == IDENTITY:
@@ -20,6 +22,11 @@ def sift(tableau, p):
         else:
             #print("table")
             #print(tableau)
+            #table = BeautifulTable()
+            #table.column_headers = list(str(range(len(tableau))))
+            for i in range(len(tableau)):
+                table.append_row(str(tableau[i]))
+            #print(table)
             q = product(q, inverse(tableau[i][j])) # inverse(tableau[i][j]))
             #print(len(q))
     return None
