@@ -8,7 +8,11 @@ import random
 
 from millerrabin import miller_rabin
 
+
 def generate_keys(p, q):
+    """
+    p and q should be both prime
+    """
     z = p * q
     phi = (p-1)*(q-1)
 
@@ -25,10 +29,9 @@ def generate_keys(p, q):
         num = random.randint(6, z-1)
         if miller_rabin(num):
             n = num
+            break
 
     print("n is ", n)
-
-    #n = random.randint(1, z-1)
 
     """
     calculate unique s such that ns(mod phi) = 1
@@ -57,9 +60,9 @@ def fast_exp(a, n):
     if n == 1:
         return a
     if n & 1:
-        return fast_exp(a, n/2) * fast_exp(a, n/2)
-    else:
-        return fast_exp(a, n-1)
+        return fast_exp(a, n/2) ** 2
+    
+    return fast_exp(a, n-1)
 
 def encrypt(message, pub_key):
     """
