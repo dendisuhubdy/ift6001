@@ -5,8 +5,16 @@ using samples of large numbers
 import random
 import sys
 import math
+import argparse
 
 from rabinmiller import rabinMiller
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='RSA Crypto systems')
+    parser.add_argument('--message', type=str, help='Message to encrypt')
+    parser.add_argument('--keySize', type=int, default=6, help='Message to encrypt')
+    args = parser.parse_args()
+    return args
 
 def isPrime(n):
      #lowPrimes is all primes (sans 2, which is covered by the bitwise and operator)
@@ -116,7 +124,7 @@ def multiply(x, y):
         return (((a << half) + d) << half) + c
 
 
-def generate_keypair(keySize=10):
+def generate_keypair(keySize=15):
     p = generateLargePrime(keySize)
     print(p)
     q = generateLargePrime(keySize)
@@ -167,17 +175,21 @@ def decrypt(pk, ciphertext):
 
 if __name__ == '__main__':
     '''
+    Parse arguments
+    '''
+    args = parse_args()
+
+    '''
     Detect if the script is being run directly by the user
     '''
     print("RSA Encrypter/ Decrypter")
 
     print("Generating your public/private keypairs now . . .")
-    public, private = generate_keypair()
+
+    public, private = generate_keypair(args.keySize)
     print("Your public key is ", public ," and your private key is ", private)
 
-    message = str(sys.argv[1])
-
-    encrypted_msg = encrypt(private, message)
+    encrypted_msg = encrypt(private, args.message)
 
     print("Your encrypted message is: ")
     print(''.join(map(lambda x: str(x), encrypted_msg)))
