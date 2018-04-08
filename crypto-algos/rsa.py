@@ -2,104 +2,119 @@
 Implementation of RSA cryptography 
 using samples of large numbers
 """
-
-import math
 import random
+import sys
 
 from millerrabin import miller_rabin
 
+def gcd(a, b):
+    '''
+    Euclid's algorithm for determining the greatest common divisor
+    Use iteration to make it faster for larger integers
+    '''
+    while b != 0:
+        a, b = b, a % b
+    return a
 
-def generate_keys(p, q):
+def multiplicative_inverse(a, b):
+    """Returns a tuple (r, i, j) such that r = gcd(a, b) = ia + jb
     """
-    p and q should be both prime
-    """
-    z = p * q
-    phi = (p-1)*(q-1)
+    # r = gcd(a,b) i = multiplicitive inverse of a mod b
+    #      or      j = multiplicitive inverse of b mod a
+    # Neg return values for i or j are made positive mod b or a respectively
+    # Iterateive Version is faster and uses much less stack space
+    x = 0
+    y = 1
+    lx = 1
+    ly = 0
+    oa = a  # Remember original a/b to remove
+    ob = b  # negative values from return results
+    while b != 0:
+        q = a // b
+        (a, b) = (b, a % b)
+        (x, lx) = ((lx - (q * x)), x)
+        (y, ly) = ((ly - (q * y)), y)
+    if lx < 0:
+        lx += ob  # If neg wrap modulo orignal b
+    if ly < 0:
+        ly += oa  # If neg wrap modulo orignal a
+    # return a , lx, ly  # Return only positive values
+    return lx
 
-    print("Phi is: " + str(phi))
+def is_prime(num):
+    if num == 2:
+        return True
+    if num < 2 or num % 2 == 0:
+        return False
+    for n in range(3, int(num**0.5)+2, 2):
+        if num % n == 0:
+            return False
+    return True
 
-    """
-    It is better to obtain n
-    as a prime number
-    """
 
-    n = None
+def generate_keypair(p, q):
+    if not (is_prime(p) and is_prime(q)):
+        raise ValueError('Both numbers must be prime.')
+    elif p == q:
+        raise ValueError('p and q cannot be equal')
+    #n = pq
+    n = p * q
 
-    for i in range(1, z-1):
-        num = random.randint(6, z-1)
-        if miller_rabin(num):
-            n = num
-            break
+    #Phi is the totient of n
+    phi = (p-1) * (q-1)
 
-    print("n is ", n)
+    #Choose an integer e such that e and phi(n) are coprime
+    e = random.randrange(1, phi)
 
-    """
-    calculate unique s such that ns(mod phi) = 1
-    if it does not exist or that gcd(n, z) \neq 1
-    then choose another n such that pgcd(n, z) \neq 1
-    """
+    #Use Euclid's Algorithm to verify that e and phi(n) are comprime
+    g = gcd(e, phi)
+    while g != 1:
+        e = random.randrange(1, phi)
+        g = gcd(e, phi)
 
-    print("Generating secret.............")
-
-    i = 1
-    for i in range(1, z-1):
-        if ((n*i) % phi == 1):
-            s = i
-            break
-
-    pub_key = [z, n]
-    print("Public key is: ", pub_key)
-    priv_key = s
-    print("Private key is: ",  priv_key)
-
-    return pub_key, priv_key
-
-def fast_exp(a, n):
-    a = int(a)
-    n = int(n)
-    if n == 1:
-        return a
-    if n & 1:
-        return fast_exp(a, n/2) ** 2
+    #Use Extended Euclid's Algorithm to generate the private key
+    d = multiplicative_inverse(e, phi)
     
-    return fast_exp(a, n-1)
+    #Return public and private keypair
+    #Public key is (e, n) and private key is (d, n)
+    return ((e, n), (d, n))
 
-def encrypt(message, pub_key):
-    """
-    message here is a large integer
-    """
-    c = fast_exp(int(message), int(pub_key[1])) % int(pub_key[0])
-    
-    """
-    c is the encrypted message
-    """
-    return c
+def encrypt(pk, plaintext):
+    #Unpack the key into it's components
+    key, n = pk
+    #Convert each letter in the plaintext to numbers based on the character using a^b mod m
+    cipher = [(ord(char) ** key) % n for char in plaintext]
+    #Return the array of bytes
+    return cipher
 
-def decrypt(encrypted_message, private_key, pub_key):
-    c = encrypted_message
+def decrypt(pk, ciphertext):
+    #Unpack the key into its components
+    key, n = pk
+    #Generate the plaintext based on the ciphertext and key using a^b mod m
+    plain = [chr((char ** key) % n) for char in ciphertext]
+    #Return the array of bytes as a string
+    return ''.join(plain)
 
-    m = fast_exp(int(c), int(private_key)) % int(pub_key[0])
+if __name__ == '__main__':
+    '''
+    Detect if the script is being run directly by the user
+    '''
+    print("RSA Encrypter/ Decrypter")
+    p = int(sys.argv[1])
+    q = int(sys.argv[2])
 
-    return m
+    print("Generating your public/private keypairs now . . .")
+    public, private = generate_keypair(p, q)
+    print("Your public key is ", public ," and your private key is ", private)
 
+    print("Enter a message to encrypt with your private key: ")
 
-def main():
-    pub_key, priv_key = generate_keys(19, 23)
+    message = str(sys.argv[3])
 
-    message = 123
-    print("Message is ", str(message))
+    encrypted_msg = encrypt(private, message)
 
-    print("Encrypting message...........")
-
-    enc_msg = encrypt(message, pub_key)
-    
-    print(enc_msg)
-
-    print("Decrypting message...........")
-    
-    dec_msg = decrypt(enc_msg, priv_key, pub_key)
-
-    print("Secret message is ", dec_msg)
-
-if __name__=="__main__":
-    main()
+    print("Your encrypted message is: ")
+    print(''.join(map(lambda x: str(x), encrypted_msg)))
+    print("Decrypting message with public key ", public ,"...")
+    print("Your message is:")
+    print(decrypt(public, encrypted_msg))
