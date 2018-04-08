@@ -1,6 +1,6 @@
 from random import randrange
 
-def miller_rabin(n, k=10):
+def rabinMiller(n, k=10):
     if n == 2:
             return True
     if not n & 1:
