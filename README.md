@@ -1,1 +1,1 @@
-# ift6001
+# IFT6001 - Introduction to Algorithmics
